@@ -14,13 +14,14 @@ func main() {
 	}
 	vPath := args[0]
 
-	_ = convert(vPath)
-
 	subtitles, err := getSubtitles(vPath)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	fmt.Println(subtitles)
+	converted := convert(subtitles, vPath)
+
+	// fmt.Println(subtitles)
+	fmt.Println(converted)
 }
