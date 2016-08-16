@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/dwbuiten/go-mediainfo/mediainfo"
 )
@@ -36,7 +37,14 @@ func format(subtitles string) string {
 }
 
 func mpl2(subtitles string) string {
-	var result string
+	var (
+		result    string
+		startTime string
+		stopTime  string
+	)
+
+	currTime := time.Date(2016, time.January, 1, 0, 0, 0, 0, time.UTC)
+
 	lines := strings.Split(subtitles, "\n")
 	for i, line := range lines {
 		// TODO: remove temp limit
@@ -47,11 +55,28 @@ func mpl2(subtitles string) string {
 		if len(matches) < 4 {
 			continue
 		}
-		start := matches[1]
-		stop := matches[2]
+
+		start, err := strconv.ParseUint(matches[1], 10, 64)
+		if err != nil {
+			continue
+		}
+
+		currTime = currTime.Add(time.Duration(start*100) * time.Millisecond)
+		startTime = currTime.Format("15:04:05.000")
+		startTime = strings.Replace(startTime, ".", ",", 1)
+
+		stop, err := strconv.ParseUint(matches[2], 10, 64)
+		if err != nil {
+			continue
+		}
+
+		currTime = currTime.Add(time.Duration(stop*100) * time.Millisecond)
+		stopTime = currTime.Format("15:04:05.000")
+		stopTime = strings.Replace(stopTime, ".", ",", 1)
+
 		text := strings.Replace(matches[3], "\r", "", -1)
 
-		result += fmt.Sprintf("%d \n%s --> %s \n%s \n\n", i, start, stop, text)
+		result += fmt.Sprintf("%d \n%s --> %s \n%s \n\n", i, startTime, stopTime, text)
 	}
 	return result
 }
