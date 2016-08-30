@@ -37,47 +37,45 @@ func format(subtitles string) string {
 }
 
 func mpl2(subtitles string) string {
-	var (
-		result    string
-		startTime string
-		stopTime  string
-	)
+	var result string
 
-	currTime := time.Date(2016, time.January, 1, 0, 0, 0, 0, time.UTC)
+	getTime := func(dsecStr string) (string, error) {
+		dsec, err := strconv.ParseUint(dsecStr, 10, 64)
+		if err != nil {
+			return "", err
+		}
+
+		t := time.Time{}
+		displayTime := t.Add(time.Duration(dsec*100) * time.Millisecond).Format("15:04:05.000")
+		displayTime = strings.Replace(displayTime, ".", ",", 1)
+
+		return displayTime, nil
+	}
 
 	lines := strings.Split(subtitles, "\n")
+
 	for i, line := range lines {
-		// TODO: remove temp limit
-		if i > 10 {
-			break
-		}
 		matches := mpl2Regex.FindStringSubmatch(line)
 		if len(matches) < 4 {
 			continue
 		}
 
-		start, err := strconv.ParseUint(matches[1], 10, 64)
+		startTime, err := getTime(matches[1])
 		if err != nil {
 			continue
 		}
 
-		currTime = currTime.Add(time.Duration(start*100) * time.Millisecond)
-		startTime = currTime.Format("15:04:05.000")
-		startTime = strings.Replace(startTime, ".", ",", 1)
-
-		stop, err := strconv.ParseUint(matches[2], 10, 64)
+		stopTime, err := getTime(matches[2])
 		if err != nil {
 			continue
 		}
-
-		currTime = currTime.Add(time.Duration(stop*100) * time.Millisecond)
-		stopTime = currTime.Format("15:04:05.000")
-		stopTime = strings.Replace(stopTime, ".", ",", 1)
 
 		text := strings.Replace(matches[3], "\r", "", -1)
+		text = strings.Replace(text, "|", "\n", -1)
 
-		result += fmt.Sprintf("%d \n%s --> %s \n%s \n\n", i, startTime, stopTime, text)
+		result += fmt.Sprintf("%d \n%s --> %s \n%s \n\n", i+1, startTime, stopTime, text)
 	}
+
 	return result
 }
 
