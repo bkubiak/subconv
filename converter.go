@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -12,18 +14,38 @@ import (
 
 var mpl2Regex *regexp.Regexp = regexp.MustCompile(`^\[(\d+)\]\[(\d+)\](.+)`)
 
-func convert(subtitles string, vPath string) string {
+func convert(subtitles string, path string) (string, error) {
 	var converted string
 	format := format(subtitles)
 	fmt.Printf("format: %s\n", format)
 	switch format {
 	case "microDVD":
-		converted = microDVD(subtitles, vPath)
+		converted = microDVD(subtitles, path)
 	case "mpl2":
 		converted = mpl2(subtitles)
 	}
 
-	return converted
+	subtitlesPath, err := save(converted, path)
+	if err != nil {
+		return "", err
+	}
+
+	fmt.Printf("subtitles saved to %s\n", subtitlesPath)
+
+	return converted, nil
+}
+
+func save(converted string, path string) (string, error) {
+	dir := filepath.Dir(path)
+	filename := filepath.Base(path)
+	subtitlesName := strings.TrimSuffix(filename, filepath.Ext(filename)) + ".srt"
+	subtitlesPath := filepath.Join(dir, subtitlesName)
+
+	if err := ioutil.WriteFile(subtitlesPath, []byte(converted), 0644); err != nil {
+		return "", err
+	}
+
+	return subtitlesPath, nil
 }
 
 func format(subtitles string) string {
@@ -79,8 +101,8 @@ func mpl2(subtitles string) string {
 	return result
 }
 
-func microDVD(subtitles string, vPath string) string {
-	fps, err := getFPS(vPath)
+func microDVD(subtitles string, path string) string {
+	fps, err := getFPS(path)
 	if err != nil {
 		fmt.Println("FPS rate: 23.976 (default)")
 		fps = 23.976

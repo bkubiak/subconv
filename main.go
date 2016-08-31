@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"path/filepath"
 )
 
 func main() {
@@ -12,16 +13,24 @@ func main() {
 		fmt.Println("Not enough arguments.")
 		return
 	}
-	vPath := args[0]
 
-	subtitles, err := getSubtitles(vPath)
+	path, err := filepath.Abs(args[0])
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	converted := convert(subtitles, vPath)
+	subtitles, err := getSubtitles(path)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	if _, err := convert(subtitles, path); err != nil {
+		fmt.Println(err)
+		return
+	}
 
 	// fmt.Println(subtitles)
-	fmt.Println(converted)
+	// fmt.Println(converted)
 }
